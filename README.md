@@ -12,7 +12,7 @@ The [Podman Installation Instructions](https://podman.io/docs/installation) page
 Like any installation command, we should run updates before actually installing a new set of packages:  
 `sudo dnf upgrade` (this is similar to *apt update && apt upgrade*)
 
-Fedora doesn't appear to have access to the same [Container Tools AppStream](https://access.redhat.com/support/policy/updates/containertools) as RHEL. This is fine, we can install [Podman](https://github.com/containers/podman, [Buildah](https://github.com/containers/buildah), [Skopeo](https://github.com/containers/skopeo), [CRIU](https://criu.org/Main_Page), [udica](https://github.com/containers/udica), etc, individually.
+Fedora doesn't appear to have access to the same [Container Tools AppStream](https://access.redhat.com/support/policy/updates/containertools) as RHEL. This is fine, we can install [Podman](https://github.com/containers/podman), [Buildah](https://github.com/containers/buildah), [Skopeo](https://github.com/containers/skopeo), [CRIU](https://criu.org/Main_Page), [udica](https://github.com/containers/udica), etc, individually.
 
 **Windows:**  
 You will not install Podman on Windows, but the Podman desktop app should make it easier to deal with containers, pods, images, volumes, kubernetes, etc on the *remote* server.
