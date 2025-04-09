@@ -52,7 +52,7 @@ While you can generally trust the images on docker, GitHub, and Quay, its still 
 
 After actually finding the container image you want, you need to download it to your local server. You do this with the `podman pull <image_name>` command.
 
-> [!IMPORTANT] ⚠️   
+> [!IMPORTANT]   
 > It will require some additional work, but you should *always* use the fully qualified image names including the registry server, namespace, image name, and tag:
 > `podman pull docker.io/library/elasticsearch:8.17.4`
 >
@@ -68,5 +68,29 @@ Eventually you'll have a group of container images downloaded to your server. Yo
 REPOSITORY                       TAG         IMAGE ID      CREATED      SIZE
 docker.io/library/elasticsearch  8.17.4      26649e4f96a1  2 weeks ago  1.33 GB
 docker.io/library/elasticsearch  8.17.3      fe65524de871  5 weeks ago  1.33 GB
+```
+
+## Running a container image
+
+You can run a Podman container pretty simply with `podman run <image_name>`
+- Notice you do *not* need to run podman with sudo, you can run the image as a normal user.
+
+There are some command options that are really helpful when running a container from the command-line:
+- `podman run -it` (when I first saw this, I thought it was some type of joke like "just run it!")
+  - The `-it` option tells Podman to install a virtual terminal within the container, allowing you to interact with the container directly via the command-line rather than having to issue some command in a more complex way... (more on that later)
+- `podman run -it --rm <image_name>`
+  - The `--rm` option instructs Podman to *remove* the container after execution.
+  - It sounds like this is considered a best practice to prevent containers from filling up your disk space.
+
+### Checking if your container is running
+
+Since you wont always want to run your container with that interactive terminal, there will be times you need to check if it's even running in the first place. You can check if your container is running with the `podman ps` command
+
+*recall:* earlier there was that `--rm` option. If you have a container that was running, but was not removed, then you'll be able to see that as well by using `podman ps -a`
+
+```bash
+~$ podman ps -a
+CONTAINER ID  IMAGE                        COMMAND     CREATED         STATUS                    PORTS       NAMES
+8e7164d2efda  quay.io/quay/busybox:latest  /bin/sh     35 seconds ago  Exited (0) 9 seconds ago              distracted_lamarr
 ```
 
