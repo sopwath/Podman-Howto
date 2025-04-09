@@ -34,8 +34,8 @@ The default list of Podman container registries is located at `/etc/containers/r
 - There's a line showing `unqualified-search-registries = ["registry.fedoraproject.org", "registry.access.redhat.com", "docker.io"]`
 
 You can setup a regisry configuration on a per-user basis by creating a separate file at `$HOME/.config/containers/registries.conf`
-- You will probably need to `mkdir .config` within your home directory
-- For now, I'll copy the example custom registries.conf file is as follows:
+- You might need to `mkdir .config` within your home directory, then create the registries.conf file with a text editor of your choice.
+- For now, I'll copy the example custom registries.conf file as follows:
 
 ```text
 unqualified-search-registries = ["docker.io", "ghrc.io", "quay.io"]
@@ -45,19 +45,81 @@ unqualified-search-registries = ["docker.io", "ghrc.io", "quay.io"]
 
 Before pulling an image, you'll want to find the specific container image you want to download. Do this with `podman search <image_name>`
 
-While you can generally trust the images on docker, GitHub, and Quay, its still a good idea to specify the registry you want to search for the image name: `podman search docker.io/library/elasticsearch`
-- In this case, only the elasticsearch container image on docker.io is the one your really want, others available at built by/for third parties or are unrelated container images.
+While you can generally trust the images on docker, GitHub, and Quay, its still a good idea to specify the registry you want to search for the image name: `podman search docker.io/library/busybox`
+- This is not *just* for security reasons, but also because there tends to be many versions of similarly named containers and you want to ensure you're getting the right one.
+- In this case, only the busybox container image on docker.io is the one your really want, others available are built by/for third parties or are unrelated container images.
+
+### Searching for image tags
+
+Simply downloading the default *latest* tag is often fine, but sometimes you may need to get a specific image build or version. You can generally do this by searching the image and listing tags. From what I've seen, the typical output from `podman search` limits the results to 20 items. This isn't great when the registry has many-many versions of the container.
+
+To list the image tags, use the `--list-tags` option:
+
+```bash
+~$ podman search docker.io/library/busybox --list-tags
+NAME                       TAG
+<a few rows were snipped just to show the end of the output>
+docker.io/library/busybox  1.25
+docker.io/library/busybox  1.25-glibc
+docker.io/library/busybox  1.25-musl
+```
+
+I was able to get a much longer list that included the *latest* tag, *stable*, and others by using the `--limit 1000` option. I'm sure there's a better way to filter based on a tag marked *stable*, but this is a little-bit interesting to see a bigger list of tags over time.
+
+```bash
+~$ podman search busybox --list-tags --limit 1000
+NAME                       TAG
+<many rows snipped>
+docker.io/library/busybox  1.37
+docker.io/library/busybox  1.37-glibc
+docker.io/library/busybox  1.37-musl
+docker.io/library/busybox  1.37-uclibc
+docker.io/library/busybox  1.37.0
+docker.io/library/busybox  1.37.0-glibc
+docker.io/library/busybox  1.37.0-musl
+docker.io/library/busybox  1.37.0-uclibc
+docker.io/library/busybox  buildroot-2013.08.1
+docker.io/library/busybox  buildroot-2014.02
+docker.io/library/busybox  glibc
+docker.io/library/busybox  latest
+docker.io/library/busybox  musl
+docker.io/library/busybox  stable
+docker.io/library/busybox  stable-glibc
+docker.io/library/busybox  stable-musl
+docker.io/library/busybox  stable-uclibc
+docker.io/library/busybox  ubuntu
+docker.io/library/busybox  ubuntu-12.04
+docker.io/library/busybox  ubuntu-14.04
+docker.io/library/busybox  uclibc
+docker.io/library/busybox  unstable
+docker.io/library/busybox  unstable-glibc
+docker.io/library/busybox  unstable-musl
+docker.io/library/busybox  unstable-uclibc
+```
 
 ## Downloading (Pulling) a Container Image
 
 After actually finding the container image you want, you need to download it to your local server. You do this with the `podman pull <image_name>` command.
 
-> [!IMPORTANT] ⚠️   
-> It will require some additional work, but you should *always* use the fully qualified image names including the registry server, namespace, image name, and tag:
-> `podman pull docker.io/library/elasticsearch:8.17.4`
+> [!IMPORTANT]   
+> You should *always* use the fully qualified image names including the registry server, namespace, image name, and tag:
+> `podman pull docker.io/library/busybox`
 >
-> Pulling by digest further eliminates the ambiguity of tags. You really do need the *@sha256:91afdfb99a446bd35855e2b13ad2944c1f691bfed436f96de30d849fa59e91b8* at the end of the full image name:
-> `podman pull docker.io/library/elasticsearch@sha256:91afdfb99a446bd35855e2b13ad2944c1f691bfed436f96de30d849fa59e91b8`
+> Pulling by index digest further eliminates the ambiguity of tags. 
+> *Note:* You really do need the at-sign and the hash like so *@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f* at the end of the full image name.
+> `podman pull docker.io/library/busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f`
+
+Let's try that now, using the index digest option:
+
+```bash
+~$ podman pull docker.io/library/busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f
+Trying to pull docker.io/library/busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f...
+Getting image source signatures
+Copying blob 97e70d161e81 done   |
+Copying config ff7a7936e9 done   |
+Writing manifest to image destination
+ff7a7936e9306ce4a789cf5523922da5e585dc1216e400efb3b6872a5137ee6b
+```
 
 ## Listing Container Images you have downloaded
 
@@ -65,8 +127,78 @@ Eventually you'll have a group of container images downloaded to your server. Yo
 
 ```bash
 ~$ podman images
-REPOSITORY                       TAG         IMAGE ID      CREATED      SIZE
-docker.io/library/elasticsearch  8.17.4      26649e4f96a1  2 weeks ago  1.33 GB
-docker.io/library/elasticsearch  8.17.3      fe65524de871  5 weeks ago  1.33 GB
+REPOSITORY                       TAG         IMAGE ID      CREATED       SIZE
+docker.io/library/elasticsearch  8.17.4      26649e4f96a1  2 weeks ago   1.33 GB
+docker.io/library/elasticsearch  8.17.3      fe65524de871  5 weeks ago   1.33 GB
+docker.io/library/busybox        <none>      ff7a7936e930  6 months ago  4.53 MB
+```
+
+This is a little odd that the busybox image is so old and that there's no image tag.
+
+### Checking Image digests
+
+Before you pull an image, you should try to verify the image's *index digest*. This is a best practice and I added an admonition above. I cannot find clear information on listing digest information from a remote repository. Rather, I can only find the `podman image inspect` command *after* the image has been pulled and saved locally.
+
+Now that I've downloaded the busybox image, I should be able to inspect it. I'd really like to do that because docker hub shows the image was pushed 21 days ago (as I'm writing this at least) but the created column shows 6 months ago. Something is wacky!
+
+```bash
+~$ podman inspect ff7
+[
+     {
+          "Id": "ff7a7936e9306ce4a789cf5523922da5e585dc1216e400efb3b6872a5137ee6b",
+          "Digest": "sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f",
+          "RepoTags": [],
+          "RepoDigests": [
+               "docker.io/library/busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f",
+               "docker.io/library/busybox@sha256:ad9fa4d07136a83e69a54ef00102f579d04eba431932de3b0f098cc5d5948f9f"
+          ],
+          "Parent": "",
+          "Comment": "",
+          "Created": "2024-09-26T21:31:42Z",
+          "Config": {
+               "Env": [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+               ],
+               "Cmd": [
+                    "sh"
+               ]
+          },
+          "Version": "",
+          "Author": "",
+          "Architecture": "amd64",
+          "Os": "linux",
+          "Size": 4527719,
+          "VirtualSize": 4527719,
+          "GraphDriver": {
+               "Name": "overlay",
+               "Data": {
+                    "UpperDir": "/home/justins/.local/share/containers/storage/overlay/068f50152bbc6e10c9d223150c9fbd30d11bcfd7789c432152aa0a99703bd03a/diff",
+                    "WorkDir": "/home/justins/.local/share/containers/storage/overlay/068f50152bbc6e10c9d223150c9fbd30d11bcfd7789c432152aa0a99703bd03a/work"
+               }
+          },
+          "RootFS": {
+               "Type": "layers",
+               "Layers": [
+                    "sha256:068f50152bbc6e10c9d223150c9fbd30d11bcfd7789c432152aa0a99703bd03a"
+               ]
+          },
+          "Labels": null,
+          "Annotations": {
+               "org.opencontainers.image.url": "https://github.com/docker-library/busybox",
+               "org.opencontainers.image.version": "1.37.0-glibc"
+          },
+          "ManifestType": "application/vnd.oci.image.manifest.v1+json",
+          "User": "",
+          "History": [
+               {
+                    "created": "2024-09-26T21:31:42Z",
+                    "created_by": "BusyBox 1.37.0 (glibc), Debian 12"
+               }
+          ],
+          "NamesHistory": [
+               "docker.io/library/busybox@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f"
+          ]
+     }
+]
 ```
 
